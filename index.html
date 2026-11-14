@@ -16,10 +16,16 @@
 @keyframes envelope-float{50%{transform:translateY(-9px);box-shadow:0 12px 70px #edb3df35}}
 #heart:not(.started) .note,#heart:not(.started) .center-note{animation-play-state:paused}
 @media(prefers-reduced-motion:reduce){.envelope{animation:none}}
+.galaxy-tools{display:flex;gap:6px}
+#music{white-space:nowrap}
+@media(max-width:360px){#galaxy .topbar{left:10px;right:10px}#galaxy .topbar .small{padding-inline:9px}}
 </style></head><body>
 <section class="screen" id="intro" aria-label="开启生日惊喜"><div class="intro-content"><span class="intro-eyebrow">A LITTLE SURPRISE FOR YOU</span><h1 class="intro-title">有一份心意，等你查收</h1><p class="intro-sub">今天的星光和祝福<br>都为你而来</p><button id="open-surprise"><span class="envelope" aria-hidden="true"><span>♡</span></span><span>轻触，开启惊喜</span></button><span class="intro-hint">愿你的今天，比昨天更快乐</span></div></section>
 <section class="screen" id="heart" hidden><div class="heading"><h1>生日快乐</h1><p>把所有美好的祝福，都送给你</p></div><div class="heart-area" id="notes"><div class="center-note"><strong>生日快乐 ♡</strong><small>愿你新的一岁<br>继续闪闪发光</small></div></div><div class="bottom"><button class="pill" id="enter">收下祝福，去看星河 ✦</button><span class="caption">今天的惊喜，为你准备</span></div></section>
-<section class="screen" id="galaxy" hidden><canvas id="sky" aria-label="星空中由发光粒子组成的立体生日蛋糕"></canvas><div class="topbar"><button class="small" id="back">♡ 回到祝福</button><button class="small" id="color">换一种星光</button></div><div class="heading"><h1 id="cake-title">星河为你亮起</h1><p id="cake-sub">闭上眼睛，许下新一岁的愿望</p></div><div class="bottom"><div class="controls"><button class="pill" id="blow">许愿 · 吹灭蜡烛</button><button class="pill" id="read" hidden>拆开生日小信 ♡</button><button class="small" id="again" hidden>重新点亮</button></div><span class="caption">指尖轻划，让星河围着蛋糕转动</span></div></section>
+<section class="screen" id="galaxy" hidden><canvas id="sky" aria-label="星空中由发光粒子组成的立体生日蛋糕"></canvas><div class="topbar"><button class="small" id="back">♡ 回到祝福</button><div class="galaxy-tools">
+  <button class="small" id="color">换一种星光</button>
+  <button class="small" id="music" type="button">♫ 播放生日歌</button>
+</div></div><div class="heading"><h1 id="cake-title">星河为你亮起</h1><p id="cake-sub">闭上眼睛，许下新一岁的愿望</p></div><div class="bottom"><div class="controls"><button class="pill" id="blow">许愿 · 吹灭蜡烛</button><button class="pill" id="read" hidden>拆开生日小信 ♡</button><button class="small" id="again" hidden>重新点亮</button></div><span class="caption">指尖轻划，让星河围着蛋糕转动</span></div></section>
 <div class="letter-wrap" id="letter-wrap" hidden><section class="letter" role="dialog" aria-modal="true" aria-labelledby="letter-title"><div class="star">✦</div><h2 id="letter-title">生日快乐</h2><p>愿你新的一岁，<br>有热爱的事，有惦记的人，<br>有说走就走的勇气，<br>也有慢慢生活的底气。</p><p>愿你抬头有星光，身边有温暖。<br>刚刚许下的愿望，<br>都在未来的某一天，悄悄实现。</p><button class="pill" id="close">收好这份祝福 ♡</button></section></div>
 <script>
 (function(){
@@ -89,9 +95,82 @@ function render(now){
  if(lit){const flame=project(0,-70,0,a);glow(flame.x,flame.y,36*scale,'#ff9e2345');glow(flame.x,flame.y,15*scale,'#ffbd52b0');ctx.fillStyle='#fff3b0';ctx.beginPath();ctx.ellipse(flame.x,flame.y,5*scale,(13+Math.sin(t*8))*scale,-.12,0,Math.PI*2);ctx.fill();for(let i=0;i<35;i++){const u=(t*.5+i/35)%1;ctx.globalAlpha=1-u;ctx.fillStyle='#ffd98b';ctx.fillRect(flame.x+Math.sin(i*7+t)*u*22*scale,flame.y-u*66*scale,1.5*scale,1.5*scale);}ctx.globalAlpha=1;}
  for(let i=sparks.length-1;i>=0;i--){const s=sparks[i];s.life-=dt;s.x+=s.vx*dt;s.y+=s.vy*dt;s.vy+=35*dt;ctx.globalAlpha=Math.max(0,s.life/2);ctx.fillStyle=s.color;ctx.fillRect(s.x,s.y,2,2);if(s.life<=0)sparks.splice(i,1);}ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';drawSnow(dt);raf=requestAnimationFrame(render);
 }
+// Happy Birthday melody, arranged for a soft music-box sound.
+const birthdayMelody=[
+ [67,.75],[67,.25],[69,1],[67,1],[72,1],[71,2],
+ [67,.75],[67,.25],[69,1],[67,1],[74,1],[72,2],
+ [67,.75],[67,.25],[79,1],[76,1],[72,1],[71,1],[69,2],
+ [77,.75],[77,.25],[76,1],[72,1],[74,1],[72,3]
+];
+const musicButton=el('music');
+let audioContext;
+let musicRun;
+let musicMuted=false;
+function stopMusic(){
+ const run=musicRun;
+ musicRun=undefined;
+ if(run){
+  run.output.disconnect();
+  for(const voice of run.voices)voice.stop();
+ }
+ musicButton.textContent='♫ 播放生日歌';
+}
+async function playMusic(){
+ const AudioContext=window.AudioContext||window.webkitAudioContext;
+ if(!AudioContext||musicRun)return;
+ try{
+  audioContext=audioContext||new AudioContext();
+  const output=audioContext.createGain();
+  output.gain.value=.42;
+  output.connect(audioContext.destination);
+  const run={output,voices:[]};
+  musicRun=run;
+  musicButton.textContent='♫ 静音';
+  await audioContext.resume();
+  if(musicRun!==run)return;
+  const beat=.44;
+  let time=audioContext.currentTime+.06;
+  for(const [note,beats] of birthdayMelody){
+   const frequency=440*Math.pow(2,(note-69)/12);
+   const tail=Math.min(1.2,beats*beat+.19);
+   for(const [ratio,volume,decay] of [[1,.19,tail],[2.01,.031,tail*.52]]){
+    const tone=audioContext.createOscillator();
+    const envelope=audioContext.createGain();
+    tone.frequency.value=frequency*ratio;
+    envelope.gain.setValueAtTime(.0001,time);
+    envelope.gain.linearRampToValueAtTime(volume,time+.015);
+    envelope.gain.exponentialRampToValueAtTime(.0001,time+decay);
+    tone.connect(envelope);
+    envelope.connect(output);
+    tone.start(time);
+    tone.stop(time+decay);
+    run.voices.push(tone);
+   }
+   time+=beats*beat;
+  }
+  run.voices[run.voices.length-2].onended=()=>{
+   if(musicRun===run){
+    musicRun=undefined;
+    output.disconnect();
+    musicButton.textContent='♫ 重播生日歌';
+   }
+  };
+ }catch{
+  stopMusic();
+ }
+}
+musicButton.onclick=()=>{
+ if(musicRun){
+  musicMuted=true;
+  stopMusic();
+ }else{
+  musicMuted=false;
+  void playMusic();
+ }
+};
 function start(){active=true;lastTime=performance.now();cancelAnimationFrame(raf);raf=requestAnimationFrame(render);}
-el('enter').onclick=()=>{el('heart').hidden=true;el('galaxy').hidden=false;resize();start();el('blow').focus();};
-el('back').onclick=()=>{active=false;cancelAnimationFrame(raf);el('galaxy').hidden=true;el('heart').hidden=false;el('enter').focus();};
+el('enter').onclick=()=>{el('heart').hidden=true;el('galaxy').hidden=false;resize();start();if(!musicMuted)void playMusic();el('blow').focus();};
+el('back').onclick=()=>{stopMusic();active=false;cancelAnimationFrame(raf);el('galaxy').hidden=true;el('heart').hidden=false;el('enter').focus();};
 canvas.onpointerdown=e=>{lastX=e.clientX;canvas.setPointerCapture(e.pointerId);};
 canvas.onpointermove=e=>{if(lastX!==null){dragAngle+=(e.clientX-lastX)*.008;lastX=e.clientX;}};
 canvas.onpointerup=canvas.onpointercancel=()=>{lastX=null;};
@@ -101,6 +180,6 @@ el('again').onclick=()=>{lit=true;el('blow').hidden=false;el('read').hidden=true
 el('read').onclick=()=>{el('letter-wrap').hidden=false;el('galaxy').inert=true;el('close').focus();};
 function close(){el('letter-wrap').hidden=true;el('galaxy').inert=false;el('read').focus();}
 el('close').onclick=close;el('letter-wrap').onclick=e=>{if(e.target===el('letter-wrap'))close();};el('letter-wrap').onkeydown=e=>{if(e.key==='Escape')close();if(e.key==='Tab'){e.preventDefault();el('close').focus();}};
-document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(raf);}else if(active)start();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){stopMusic();cancelAnimationFrame(raf);}else if(active)start();});
 })();
 </script></body></html>
