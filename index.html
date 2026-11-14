@@ -31,6 +31,13 @@
 @media(prefers-reduced-motion:reduce){
  .letter-wrap:not([hidden]) .letter-line{animation:none}
 }
+#intro.opening{pointer-events:none;animation:open-surprise-fade .85s ease-in-out both}
+#intro.opening .intro-content{animation:open-surprise-content .6s ease-out both}
+@keyframes open-surprise-fade{from{opacity:1}to{opacity:0}}
+@keyframes open-surprise-content{
+ from{opacity:1;transform:translateY(0)}
+ to{opacity:0;transform:translateY(-5px)}
+}
 </style></head><body>
 <section class="screen" id="intro" aria-label="开启生日惊喜"><div class="intro-content"><span class="intro-eyebrow">A LITTLE SURPRISE FOR YOU</span><h1 class="intro-title">有一份心意，等你查收</h1><p class="intro-sub">今天的星光和祝福<br>都为你而来</p><button id="open-surprise"><span class="envelope" aria-hidden="true"><span>♡</span></span><span>轻触，开启惊喜</span></button><span class="intro-hint">愿你的今天，比昨天更快乐</span></div></section>
 <section class="screen" id="heart" hidden><div class="heading"><h1>生日快乐</h1><p>把所有美好的祝福，都送给你</p></div><div class="heart-area" id="notes"><div class="center-note"><strong>生日快乐 ♡</strong><small>愿你新的一岁<br>继续闪闪发光</small></div></div><div class="bottom"><button class="pill" id="enter">收下祝福，去看星河 ✦</button><span class="caption">今天的惊喜，为你准备</span></div></section>
@@ -61,7 +68,25 @@
 (function(){
 'use strict';
 const el=id=>document.getElementById(id);
-el('open-surprise').onclick=()=>{el('intro').hidden=true;el('heart').hidden=false;el('heart').classList.add('started');el('enter').focus();};
+el('open-surprise').onclick=()=>{
+ const intro=el('intro');
+ const heart=el('heart');
+ if(intro.classList.contains('opening')||intro.hidden)return;
+ heart.hidden=false;
+ const finish=()=>{
+  intro.hidden=true;
+  heart.inert=false;
+  heart.classList.add('started');
+  el('enter').focus();
+ };
+ if(matchMedia('(prefers-reduced-motion: reduce)').matches){
+  finish();
+  return;
+ }
+ heart.inert=true;
+ intro.classList.add('opening');
+ setTimeout(finish,850);
+};
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const phrases=['天天开心 ☀','平安顺遂 ♡','好运常在 ✦','万事胜意','愿望都实现','快乐加倍 ♡','永远有趣','自在发光 ✧','常有好事发生','所遇皆温柔','勇敢做自己','有空就去玩','睡个好觉 ☁','新的一岁超棒','好梦都成真','一切都刚刚好','喜欢的人常见','快乐不止今天'];
 const palette=['#fbdde8','#dbebdf','#e4ddf5','#fff0ca','#dce9f8','#f9e1d1'];
