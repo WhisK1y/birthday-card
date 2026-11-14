@@ -19,6 +19,18 @@
 .galaxy-tools{display:flex;gap:6px}
 #music{white-space:nowrap}
 @media(max-width:360px){#galaxy .topbar{left:10px;right:10px}#galaxy .topbar .small{padding-inline:9px}}
+.letter-line{display:block}
+.letter-wrap:not([hidden]) .letter-line{
+ animation:letter-appear .55s ease-out both;
+ animation-delay:calc(.15s + var(--line) * .44s);
+}
+@keyframes letter-appear{
+ from{opacity:0;transform:translateY(6px)}
+ to{opacity:1;transform:translateY(0)}
+}
+@media(prefers-reduced-motion:reduce){
+ .letter-wrap:not([hidden]) .letter-line{animation:none}
+}
 </style></head><body>
 <section class="screen" id="intro" aria-label="开启生日惊喜"><div class="intro-content"><span class="intro-eyebrow">A LITTLE SURPRISE FOR YOU</span><h1 class="intro-title">有一份心意，等你查收</h1><p class="intro-sub">今天的星光和祝福<br>都为你而来</p><button id="open-surprise"><span class="envelope" aria-hidden="true"><span>♡</span></span><span>轻触，开启惊喜</span></button><span class="intro-hint">愿你的今天，比昨天更快乐</span></div></section>
 <section class="screen" id="heart" hidden><div class="heading"><h1>生日快乐</h1><p>把所有美好的祝福，都送给你</p></div><div class="heart-area" id="notes"><div class="center-note"><strong>生日快乐 ♡</strong><small>愿你新的一岁<br>继续闪闪发光</small></div></div><div class="bottom"><button class="pill" id="enter">收下祝福，去看星河 ✦</button><span class="caption">今天的惊喜，为你准备</span></div></section>
@@ -26,7 +38,24 @@
   <button class="small" id="color">换一种星光</button>
   <button class="small" id="music" type="button">♫ 播放生日歌</button>
 </div></div><div class="heading"><h1 id="cake-title">星河为你亮起</h1><p id="cake-sub">闭上眼睛，许下新一岁的愿望</p></div><div class="bottom"><div class="controls"><button class="pill" id="blow">许愿 · 吹灭蜡烛</button><button class="pill" id="read" hidden>拆开生日小信 ♡</button><button class="small" id="again" hidden>重新点亮</button></div><span class="caption">指尖轻划，让星河围着蛋糕转动</span></div></section>
-<div class="letter-wrap" id="letter-wrap" hidden><section class="letter" role="dialog" aria-modal="true" aria-labelledby="letter-title"><div class="star">✦</div><h2 id="letter-title">生日快乐</h2><p>愿你新的一岁，<br>有热爱的事，有惦记的人，<br>有说走就走的勇气，<br>也有慢慢生活的底气。</p><p>愿你抬头有星光，身边有温暖。<br>刚刚许下的愿望，<br>都在未来的某一天，悄悄实现。</p><button class="pill" id="close">收好这份祝福 ♡</button></section></div>
+<div class="letter-wrap" id="letter-wrap" hidden>
+  <section class="letter" role="dialog" aria-modal="true" aria-labelledby="letter-title">
+    <div class="star">✦</div>
+    <h2 class="letter-line" id="letter-title" style="--line:0">生日快乐</h2>
+    <p>
+      <span class="letter-line" style="--line:1">愿你新的一岁，</span>
+      <span class="letter-line" style="--line:2">有热爱的事，有惦记的人，</span>
+      <span class="letter-line" style="--line:3">有说走就走的勇气，</span>
+      <span class="letter-line" style="--line:4">也有慢慢生活的底气。</span>
+    </p>
+    <p>
+      <span class="letter-line" style="--line:5">愿你抬头有星光，身边有温暖。</span>
+      <span class="letter-line" style="--line:6">刚刚许下的愿望，</span>
+      <span class="letter-line" style="--line:7">都在未来的某一天，悄悄实现。</span>
+    </p>
+    <button class="pill" id="close">收好这份祝福 ♡</button>
+  </section>
+</div>
 <script>
 (function(){
 'use strict';
