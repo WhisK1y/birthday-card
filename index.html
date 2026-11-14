@@ -46,8 +46,8 @@ for(let i=0;i<76;i++){
  el('notes').appendChild(card);
 }
 const canvas=el('sky'),ctx=canvas.getContext('2d');
-let width=0,height=0,scale=1,angle=0,dragAngle=0,lastX=null,lit=true,active=false,raf=0,lastTime=0,tone=0;
-const particles=[],stars=[],sparks=[];
+let angle=0,dragAngle=0,lastX=null,lit=true,active=false,raf=0,lastTime=0,tone=0;
+const stars=[],sparks=[];
 const snowflakes=Array.from({length:85},(_,i)=>({x:Math.random(),y:Math.random(),r:i%5===0?3+Math.random()*2:1+Math.random()*1.7,speed:14+Math.random()*25,phase:Math.random()*Math.PI*2,rotation:Math.random()*Math.PI}));
 let snowTime=0;
 function drawSnow(dt){
@@ -67,20 +67,183 @@ function drawSnow(dt){
  }
  ctx.restore();
 }
-function point(x,y,z,hue,size=1,group='cake'){particles.push({x,y,z,hue,size,group,seed:Math.random()*6.28});}
-function ring(radius,y,count,hue,size=1){for(let i=0;i<count;i++){const a=i/count*Math.PI*2;point(Math.cos(a)*radius,y,Math.sin(a)*radius,hue,size);}}
 for(let i=0;i<300;i++)stars.push({x:Math.random(),y:Math.random(),size:Math.random()*1.3+.25,phase:Math.random()*6.28});
-for(let i=0;i<3800;i++){const a=Math.random()*Math.PI*2,y=20+Math.random()*94;point(Math.cos(a)*96,y,Math.sin(a)*96,230+Math.random()*75,Math.random()*.9+.5);}
-for(let i=0;i<2100;i++){const a=Math.random()*Math.PI*2,r=Math.sqrt(Math.random())*96;point(Math.cos(a)*r,19,Math.sin(a)*r,295+Math.random()*60,Math.random()*.8+.5);}
-for(let j=0;j<5;j++){ring(97+j*.6,18+j*.9,260,315,1);ring(97,110+j,220,265,1);}
-for(let i=0;i<1300;i++){const a=Math.random()*Math.PI*2;const y=20+Math.random()*(9+16*Math.pow((Math.sin(a*10)+1)/2,3));point(Math.cos(a)*98,y,Math.sin(a)*98,330+Math.random()*25,1);}
-for(let i=0;i<12;i++){const a=i/12*Math.PI*2;for(let k=0;k<60;k++){const b=Math.random()*Math.PI*2,r=Math.random()*6;point(Math.cos(a)*79+Math.cos(b)*r,12-Math.random()*8,Math.sin(a)*79+Math.sin(b)*r,335,1.1);}}
-for(let y=-53;y<17;y+=1.2){ring(6,y,12,((y+55)%14<7)?310:45,1.2);}
-for(let i=0;i<4;i++)ring(118+i*2,120+i,340,260+i*9,.8);
-for(let i=0;i<1050;i++){const a=Math.random()*Math.PI*2,r=130+Math.random()*65;point(Math.cos(a)*r,Math.random()*200-65,Math.sin(a)*r,Math.random()*360,.5+Math.random(), 'dust');}
-function resize(){width=innerWidth;height=innerHeight;const dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);scale=Math.min(width/470,height/670,1.75);}
+const tau=2*Math.PI;
+const candy=['#ffdb61','#fff4d6','#f48ccc','#58a4ff','#6be7db','#b8a4ff'];
+const cakeSpecks=[];
+for(let i=0;i<3900;i++){
+ const top=i<1550;
+ const angle=Math.random()*tau;
+ const radius=top?Math.sqrt(Math.random())*110:113;
+ cakeSpecks.push({
+  top,angle,radius,y:top?0:Math.random()*151,
+  color:candy[i%candy.length],size:.25+Math.random()**3*1.15,phase:Math.random()*tau
+ });
+}
+const orbitDust=Array.from({length:1570},(_,i)=>({
+ angle:Math.random()*tau,radius:116+Math.random()**1.4*64,
+ y:-230+Math.random()*420,color:candy[i%candy.length],
+ size:i<150?1.8+Math.random()**2*6:.25+Math.random()*1.4,
+ phase:Math.random()*tau
+}));
+const nebula=document.createElement('canvas');
+nebula.width=384;nebula.height=320;
+const paint=nebula.getContext('2d');
+function mist(x,y,rx,ry,color){
+ paint.save();paint.translate(x,y);paint.scale(rx,ry);
+ const g=paint.createRadialGradient(0,0,0,0,0,1);
+ g.addColorStop(0,color);g.addColorStop(.42,color);g.addColorStop(1,'transparent');
+ paint.fillStyle=g;paint.fillRect(-1,-1,2,2);paint.restore();
+}
+for(let i=0;i<230;i++){
+ const x=Math.random()*384;
+ const y=50+Math.random()*220+25*Math.sin(x/70);
+ const light=i%4===0?'rgba(171,143,255,.085)':'rgba(54,105,255,.09)';
+ mist(x,y,14+Math.random()*60,6+Math.random()*30,light);
+}
+const plateRadius=128, cakeRadius=113, cakeHeight=151;
+let width=0,height=0,scale=1;
+function resize(){
+ width=innerWidth;height=innerHeight;
+ const dpr=Math.min(devicePixelRatio||1,2);
+ canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+ scale=Math.min(width/399,height/655,1.95);
+}
 addEventListener('resize',resize);resize();
-function project(x,y,z,a){const rx=x*Math.cos(a)+z*Math.sin(a),rz=z*Math.cos(a)-x*Math.sin(a);const ry=y*.91-rz*.42,depth=y*.42+rz*.91;const p=650/(650+depth);return{x:width/2+rx*scale*p,y:height*.52+ry*scale*p,s:p,z:depth};}
+function disc(x,y,r,aspect,color){
+ ctx.beginPath();ctx.ellipse(x,y,r*scale,r*scale*aspect,0,0,tau);
+ ctx.fillStyle=color;ctx.fill();
+}
+function gradientY(y1,y2,stops){
+ const g=ctx.createLinearGradient(0,y1,0,y2);
+ stops.forEach(([offset,color])=>g.addColorStop(offset,color));
+ return g;
+}
+function drawCake(a,t){
+ const cx=width*.5, cy=height*.51, s=scale, tilt=.36;
+ const bodyBottom=cy+cakeHeight*s;
+ const radius=cakeRadius*s, oval=radius*tilt;
+ const hue=(226+tone)%360;
+ const color=(light,saturation=63)=>'hsl('+hue+' '+saturation+'% '+light+'%)';
+ // An orbit passes behind the candle. Lower rings trace the serving plate.
+ ctx.save();
+ ctx.translate(cx,cy-60*s);ctx.rotate(1.08+a*.04);
+ for(let i=0;i<3;i++){
+  ctx.beginPath();ctx.ellipse(0,0,(146+i*3)*s,(30+i*4)*s,0,0,tau);
+  ctx.setLineDash([.7*s,2.7*s]);ctx.lineDashOffset=-t*8+i;
+  ctx.lineWidth=.85;ctx.strokeStyle=i===0?'#ffdb9ab5':'#c4b3ff6e';ctx.stroke();
+ }
+ ctx.restore();
+ for(let i=0;i<4;i++){
+  const r=(132+i*6)*s;
+  ctx.beginPath();ctx.ellipse(cx,bodyBottom+(13+i*2)*s,r,r*.34,0,0,tau);
+  ctx.lineWidth=.65;ctx.strokeStyle=['#e9c67858','#527af479','#949bef44','#e9c67836'][i];ctx.stroke();
+ }
+ disc(cx,bodyBottom+7*s,plateRadius,.37,gradientY(bodyBottom-30*s,bodyBottom+54*s,[[0,'#080d22'],[.78,'#111b3d'],[.96,'#63739f'],[1,'#252e54']]));
+ // Clipped blue frosting and a nebula texture form the solid side wall.
+ ctx.save();
+ ctx.beginPath();
+ ctx.ellipse(cx,cy,radius,oval,0,Math.PI,tau);
+ ctx.lineTo(cx+radius,bodyBottom);
+ ctx.ellipse(cx,bodyBottom,radius,oval,0,0,Math.PI);
+ ctx.closePath();ctx.clip();
+ const side=ctx.createLinearGradient(cx-radius,0,cx+radius,0);
+ [[0,color(10)],[.19,color(21)],[.46,color(12)],[.72,color(18)],[1,color(8)]].forEach(([p,c])=>side.addColorStop(p,c));
+ ctx.fillStyle=side;ctx.fillRect(cx-radius,cy-oval,2*radius,bodyBottom-cy+2*oval);
+ ctx.globalCompositeOperation='screen';
+ ctx.drawImage(nebula,cx-radius,cy-oval,2*radius,bodyBottom-cy+2*oval);
+ ctx.restore();
+ disc(cx,cy,cakeRadius,tilt,gradientY(cy-oval,cy+oval,[[0,'#282451'],[.56,'#61518d'],[1,'#25214e']]));
+ ctx.save();
+ ctx.beginPath();ctx.ellipse(cx,cy,radius,oval,0,0,tau);ctx.clip();
+ ctx.translate(cx,cy);ctx.scale(1,.39);
+ glow(0,0,100*s,'#e7a0ffb0');
+ glow(0,0,56*s,'#ffbf94d0');
+ glow(0,0,31*s,'#fff1adc9');
+ ctx.restore();
+ for(const p of cakeSpecks){
+  const angle=p.angle+a;
+  const depth=Math.sin(angle);
+  if(!p.top&&depth<0)continue;
+  const x=cx+Math.cos(angle)*p.radius*s;
+  const y=cy+(p.y+depth*p.radius*tilt)*s;
+  ctx.globalAlpha=(p.top?.48:.62)*(.67+.33*Math.sin(p.phase+t*1.7)**2);
+  ctx.fillStyle=p.color;
+  const size=Math.max(.5,p.size*s);
+  ctx.fillRect(x,y,size,size);
+ }
+ ctx.globalAlpha=1;
+ // Overlapping frosting pearls use a shaded surface and a soft highlight.
+ const pearls=[];
+ for(let i=0;i<35;i++){
+  const angle=i/35*tau+a;
+  pearls.push({x:Math.cos(angle),z:Math.sin(angle)});
+ }
+ pearls.sort((p,q)=>p.z-q.z);
+ for(const p of pearls){
+  const x=cx+p.x*radius,y=cy+p.z*oval;
+  const r=(10+p.z*1.15)*s;
+  const g=ctx.createRadialGradient(x-r*.28,y-r*.42,r*.1,x,y,r);
+  g.addColorStop(0,'#ffffff');g.addColorStop(.55,'#f9f4ff');
+  g.addColorStop(.86,'#d5d4f3');g.addColorStop(1,'#aaa9d3');
+  disc(x,y,r/s,.85,g);
+ }
+ // Ivory candle with diagonal lavender stripes.
+ const candleTop=cy-63*s;
+ ctx.save();
+ ctx.beginPath();ctx.rect(cx-4*s,candleTop,8*s,63*s);ctx.clip();
+ ctx.fillStyle='#fff0da';ctx.fillRect(cx-4*s,candleTop,8*s,63*s);
+ ctx.strokeStyle='#bdb0e8';ctx.lineWidth=3.2*s;
+ for(let i=0;i<7;i++){
+  const y=candleTop+i*10*s;
+  ctx.beginPath();ctx.moveTo(cx-5*s,y+6*s);ctx.lineTo(cx+5*s,y-1*s);ctx.stroke();
+ }
+ ctx.restore();
+ ctx.fillStyle=lit?'#fff7d2':'#40324c';ctx.fillRect(cx-s,candleTop-5*s,2*s,6*s);
+ if(lit)drawFlame(cx,candleTop-5*s,s,t);
+ for(const p of orbitDust){
+  const angle=p.angle+a*.73+(reduced?0:t*.09);
+  const depth=Math.sin(angle);
+  const x=cx+Math.cos(angle)*p.radius*s;
+  const y=cy+(p.y+depth*p.radius*.25)*s;
+  if(depth<0&&Math.abs(x-cx)<radius&&y>cy-oval&&y<bodyBottom+oval)continue;
+  const r=p.size*s;
+  ctx.globalAlpha=(depth<0?.49:.84)*(.67+.33*Math.sin(p.phase+t)**2);
+  if(p.size>3){
+   const g=ctx.createRadialGradient(x-r*.23,y-r*.26,0,x,y,r*1.14);
+   g.addColorStop(0,'#fffdf2');g.addColorStop(.26,p.color);
+   g.addColorStop(.76,p.color);g.addColorStop(1,'transparent');
+   ctx.fillStyle=g;ctx.fillRect(x-r*1.15,y-r*1.15,r*2.3,r*2.3);
+  }else{
+   ctx.fillStyle=p.color;ctx.fillRect(x,y,r*1.22,r*1.22);
+  }
+ }
+ ctx.globalAlpha=1;
+}
+function drawFlame(x,y,s,t){
+ const flicker=reduced?0:Math.sin(t*6)*3+Math.sin(t*11)*1.5;
+ ctx.save();
+ ctx.globalCompositeOperation='screen';
+ glow(x,y-51*s,150*s,'#9b3a6449');
+ glow(x,y-46*s,90*s,'#ff86277f');
+ glow(x,y-40*s,56*s,'#ffb942cb');
+ glow(x,y-25*s,30*s,'#fff2b6df');
+ ctx.beginPath();
+ ctx.moveTo(x,y+3*s);
+ ctx.bezierCurveTo(x-42*s,y-24*s,x-6*s,y-72*s,x+flicker*s,y-103*s);
+ ctx.bezierCurveTo(x+3*s,y-68*s,x+37*s,y-25*s,x,y+3*s);
+ ctx.fillStyle=gradientY(y-106*s,y+3*s,[[0,'#fff6c980'],[.29,'#fff5b8'],[.79,'#fffef5'],[1,'#ffffff']]);
+ ctx.fill();
+ for(let i=0;i<125;i++){
+  const u=((reduced?0:t*.47)+i/125)%1, phase=i*2.399;
+  ctx.globalAlpha=(1-u)*.9;
+  ctx.fillStyle=i%4===0?'#fff7e5':'#ffd661';
+  const size=(.55+(i%7)*.19)*s;
+  ctx.fillRect(x+Math.sin(phase+u*4)*(10+38*u)*s,y-(15+u*155)*s,size,size);
+ }
+ ctx.restore();
+}
 function glow(x,y,r,color){const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,color);g.addColorStop(1,'transparent');ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);}
 let nextMeteor=.7;
 let meteor;
@@ -122,16 +285,11 @@ function drawMeteor(dt){
 }
 function render(now){
  if(!active)return; const dt=Math.min((now-lastTime)/1000||0,.05);lastTime=now;if(!reduced)angle+=dt*.13;const a=angle+dragAngle,t=now/1000;
- ctx.fillStyle='#080816';ctx.fillRect(0,0,width,height);
- glow(width*.5,height*.59,width*.68,'#30174545');glow(width*.15,height*.4,width*.5,'#14295730');
+ ctx.fillStyle='#020205';ctx.fillRect(0,0,width,height);
+ glow(width*.5,height*.39,235*scale,'#44205253');
  for(const s of stars){ctx.globalAlpha=.35+.4*Math.sin((reduced?0:t*.5)+s.phase)**2;ctx.fillStyle='#dce0ff';ctx.fillRect(s.x*width,s.y*height,s.size,s.size);}ctx.globalAlpha=1;
  drawMeteor(dt);
- const list=particles.map(p=>{let x=p.x,y=p.y,z=p.z;if(p.group==='dust'){const rot=reduced?0:t*.1;const xx=x*Math.cos(rot)+z*Math.sin(rot);z=z*Math.cos(rot)-x*Math.sin(rot);x=xx;y+=Math.sin(t*.5+p.seed)*5;}return{p,v:project(x,y,z,a)};}).sort((a,b)=>b.v.z-a.v.z);
- ctx.globalCompositeOperation='lighter';
- for(const item of list){const p=item.p,v=item.v;const hue=(p.hue+tone)%360;ctx.globalAlpha=p.group==='dust'?.35+.4*Math.sin(t+p.seed)**2:.72;ctx.fillStyle='hsl('+hue+' 85% '+(p.group==='cake'?75:68)+'%)';const size=p.size*scale*v.s;ctx.beginPath();ctx.arc(v.x,v.y,Math.max(.35,size),0,Math.PI*2);ctx.fill();}
- ctx.globalAlpha=1;
- for(let j=0;j<2;j++)for(let i=0;i<240;i++){const b=i/240*Math.PI*2+(reduced?0:t*.18);const p=project(Math.cos(b)*(155+j*20),-23+Math.sin(b)*40+j*7,Math.sin(b)*(155+j*20),a+.5);ctx.fillStyle='hsla('+((280+tone+i*.3)%360)+' 85% 83% / .55)';ctx.fillRect(p.x,p.y,scale,scale);}
- if(lit){const flame=project(0,-70,0,a);glow(flame.x,flame.y,36*scale,'#ff9e2345');glow(flame.x,flame.y,15*scale,'#ffbd52b0');ctx.fillStyle='#fff3b0';ctx.beginPath();ctx.ellipse(flame.x,flame.y,5*scale,(13+Math.sin(t*8))*scale,-.12,0,Math.PI*2);ctx.fill();for(let i=0;i<35;i++){const u=(t*.5+i/35)%1;ctx.globalAlpha=1-u;ctx.fillStyle='#ffd98b';ctx.fillRect(flame.x+Math.sin(i*7+t)*u*22*scale,flame.y-u*66*scale,1.5*scale,1.5*scale);}ctx.globalAlpha=1;}
+ drawCake(a,t);
  for(let i=sparks.length-1;i>=0;i--){const s=sparks[i];s.life-=dt;s.x+=s.vx*dt;s.y+=s.vy*dt;s.vy+=35*dt;ctx.globalAlpha=Math.max(0,s.life/2);ctx.fillStyle=s.color;ctx.fillRect(s.x,s.y,2,2);if(s.life<=0)sparks.splice(i,1);}ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';drawSnow(dt);raf=requestAnimationFrame(render);
 }
 // Happy Birthday melody, arranged for a soft music-box sound.
